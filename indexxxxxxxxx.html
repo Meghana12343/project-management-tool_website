@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Project Management Tool</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    input, select { margin: 5px; }
+    button { margin: 5px; }
+  </style>
+</head>
+<body>
+  <h1>Project Management Tool</h1>
+
+  <h2>Add Project</h2>
+  <input type="text" id="projectName" placeholder="Project Name">
+  <select id="projectStatus">
+    <option value="In Progress">In Progress</option>
+    <option value="Completed">Completed</option>
+  </select>
+  <button onclick="addProject()">Add Project</button>
+
+  <h2>Projects</h2>
+  <ul id="projectList"></ul>
+
+  <script>
+    const API_URL = 'http://localhost:3000/projects';
+
+    async function fetchProjects() {
+      const res = await fetch(API_URL);
+      const projects = await res.json();
+      const list = document.getElementById('projectList');
+      list.innerHTML = '';
+      projects.forEach(project => {
+        const li = document.createElement('li');
+        li.textContent = `${project.name} - ${project.status}`;
+        li.innerHTML += ` <button onclick="deleteProject(${project.id})">Delete</button>`;
+        li.innerHTML += ` <button onclick="updateProject(${project.id})">Toggle Status</button>`;
+        list.appendChild(li);
+      });
+    }
+
+    async function addProject() {
+      const name = document.getElementById('projectName').value;
+      const status = document.getElementById('projectStatus').value;
+      await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, status })
+      });
+      document.getElementById('projectName').value = '';
+      fetchProjects();
+    }
+
+    async function deleteProject(id) {
+      await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+      fetchProjects();
+    }
+
+    async function updateProject(id) {
+      const res = await fetch(`${API_URL}/${id}`);
+      const project = await res.json();
+      const newStatus = project.status === "In Progress" ? "Completed" : "In Progress";
+      await fetch(`${API_URL}/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      });
+      fetchProjects();
+    }
+
+    fetchProjects();
+  </script>
+</body>
+</html>
